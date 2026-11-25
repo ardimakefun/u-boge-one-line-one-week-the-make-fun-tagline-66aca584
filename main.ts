@@ -23,6 +23,19 @@ if (TAGLINE.includes("\n") || TAGLINE.includes("\r")) {
   throw new Error("Tagline must be a single line (no newline characters)");
 }
 
+// Reject invisible control characters (tab, NUL, DEL, other C0 controls):
+// they are not visible in a single read, can break the tagline's rendering,
+// and could trip the gate's UTF-8/single-line expectations. A tagline is
+// printable text only.
+for (const ch of TAGLINE) {
+  const code = ch.codePointAt(0)!;
+  if (code < 0x20 || code === 0x7f) {
+    throw new Error(
+      `Tagline contains a control character U+${code.toString(16).toUpperCase().padStart(4, "0")}`,
+    );
+  }
+}
+
 mkdirSync("/output", { recursive: true });
 writeFileSync("/output/entry.txt", TAGLINE, "utf8");
 
